@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리 약속해!</title>
     <style>
         body { font-family: 'Pretendard', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #fff0f5; overflow: hidden; }
@@ -18,6 +18,10 @@
         .btn-prev { background: #54a0ff; color: white; width: 60px; height: 30px; font-size: 12px; margin-top: 20px; }
         #messageBox { position: absolute; top: 15px; color: #ff7675; font-weight: bold; display: none; font-size: 14px; z-index: 10; }
         input { width: 80%; padding: 15px; margin: 10px 0; border: 2px solid #ffeaa7; border-radius: 15px; box-sizing: border-box; }
+        
+        .no-placeholder { width: 120px; height: 50px; }
+        /* 초기에는 button-group의 흐름을 따르도록 설정 */
+        #noBtn { z-index: 100; touch-action: manipulation; }
     </style>
 </head>
 <body>
@@ -29,7 +33,7 @@
         <h2>약속 잡을까? 🥺</h2>
         <div class="button-group">
             <button type="button" class="btn-yes" onclick="nextPage(2)">좋아!</button>
-            <button type="button" class="btn-no" id="noBtn" style="position: static;">싫어..</button>
+            <button type="button" class="btn-no" id="noBtn">싫어..</button>
         </div>
     </div>
 
@@ -77,86 +81,61 @@
             <p style="margin: 3px 0; font-size: 13px;" id="summaryActivity"></p>
         </div>
         <button type="submit" class="btn-yes" style="margin-top: 15px;">전송하기</button>
-        
-        <button type="button" class="btn-no" onclick="handleReload()" style="margin-top: 10px; width: 80px; height: 30px; font-size: 11px; padding: 0;">
-            약속 또 잡기
-        </button>
+        <button type="button" class="btn-no" onclick="handleReload()" style="margin-top: 10px; width: 80px; height: 30px; font-size: 11px; padding: 0;">약속 또 잡기</button>
     </div>
 </form>
 
 <script>
-    let clickCount = 0;
-
-    function handleReload() {
-        // sessionStorage에서 이전 카운트를 가져옴 (없으면 0)
-        let count = parseInt(sessionStorage.getItem('clickCount') || '0');
+    function jumpAway() {
+        const btn = document.getElementById('noBtn');
+        const container = document.querySelector('.container');
+        const rect = container.getBoundingClientRect();
         
-        count++; // 1 증가
+        // 처음 한 번 도망갈 때 position을 absolute로 변경
+        btn.style.position = 'absolute';
         
-        if (count >= 3) {
-            alert("적당히 하지?");
-            // 3번 됐을 때 0으로 돌려놓고 싶으면 아래 주석 해제하세요.
-            // sessionStorage.setItem('clickCount', '0'); 
-        } else {
-            // 3번 미만일 때만 카운트를 저장하고 새로고침
-            sessionStorage.setItem('clickCount', count.toString());
-            location.reload();
-        }
+        btn.style.left = (Math.random() * (rect.width - 150) + 10) + 'px';
+        btn.style.top = (Math.random() * (rect.height - 70) + 10) + 'px';
     }
+
+    document.getElementById('noBtn').addEventListener('mouseover', jumpAway);
+    document.getElementById('noBtn').addEventListener('touchstart', (e) => { e.preventDefault(); jumpAway(); });
+    document.getElementById('noBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        jumpAway();
+    });
 
     function nextPage(pageNum) {
         document.getElementById('messageBox').style.display = 'none';
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page' + pageNum).classList.add('active');
+        // '싫어' 버튼은 페이지 1에서만 보여줌
         document.getElementById('noBtn').style.display = (pageNum === 1) ? 'block' : 'none';
     }
 
-    function checkAndNext() {
+    // 기타 기능 함수들은 동일 (handleReload, checkAndNext 등)
+    function handleReload() { location.reload(); }
+    function checkAndNext() { 
         if(!document.getElementById('dateInput').value || !document.getElementById('timeInput').value) {
             document.getElementById('messageBox').style.display = 'block';
             return;
         }
         nextPage(4);
     }
-
     function finishSetup(activity) {
         let finalActivity = activity || document.getElementById('customActivity').value;
-        const date = document.getElementById('dateInput').value;
-        const time = document.getElementById('timeInput').value;
-        
-        document.getElementById('summaryDate').innerText = "날짜: " + date;
-        document.getElementById('summaryTime').innerText = "시간: " + time;
+        document.getElementById('summaryDate').innerText = "날짜: " + document.getElementById('dateInput').value;
+        document.getElementById('summaryTime').innerText = "시간: " + document.getElementById('timeInput').value;
         document.getElementById('summaryActivity').innerText = "일정: " + finalActivity;
-        document.getElementById('displayTime').innerText = time; 
-        
+        document.getElementById('displayTime').innerText = document.getElementById('timeInput').value;
         document.getElementById('activityInput').value = finalActivity;
         nextPage(6);
     }
 
-    function jumpAway() {
-        const btn = document.getElementById('noBtn');
-        btn.style.position = 'absolute';
-        btn.style.left = (Math.random() * 150 + 20) + 'px';
-        btn.style.top = (Math.random() * 300 + 20) + 'px';
-    }
-
-    document.getElementById('noBtn').addEventListener('mouseover', jumpAway);
-    document.getElementById('noBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        jumpAway();
-        if (Math.random() < 0.2) {
-            const m = document.getElementById('messageBox');
-            m.innerText = "뭐라고? 🤨";
-            m.style.display = 'block';
-        }
-    });
-
     document.getElementById('mainForm').addEventListener('submit', function(e) {
         e.preventDefault();
         fetch(this.action, { method: 'POST', body: new FormData(this) })
-        .then(() => {
-            alert("잘 전달되었어. 그떄 보자~ 🥰");
-        });
+        .then(() => alert("잘 전달되었어. 그떄 보자~ 🥰"));
     });
 </script>
 </body>
